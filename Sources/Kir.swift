@@ -20,6 +20,7 @@ public struct KirFunctionHost: KirHandler {
 		fn(request: request, response: response, next: next)
 	}
 }
+
 /// Middleware chain element
 public final class Middleware {
 	internal let handler: KirHandler
@@ -30,6 +31,10 @@ public final class Middleware {
 		next = n
 	}
 
+	/**
+		Wrap a HTTPServerDelegate instance to be used as a middleware.
+		The next method is called automatically after.
+	*/
 	public class func wrap(_ handler: HTTPServerDelegate) -> KirHandler {
 
 		let fn: KirFunctionHandler = { request , response, next  in 
@@ -51,29 +56,49 @@ extension Middleware: HTTPServerDelegate {
 	}
 }
 
-///TODO: Wrapping Methods
-
-
 // MARK: - Kir Element
 
+/// The Kir class
 public final class Kir {
 
 	private var middleware: Middleware
 	private var handlers: [KirHandler]
 
+	/**
+		The default initializer.
+
+		- parameter handlers: The different handlers to be used
+	*/
 	public init(handlers hs: KirHandler...) {
 		handlers = hs
 		middleware = Kir.build(handlers)
 	}
 
-	public func use(_ handler: KirHandler) {
+	/**
+		Add the specified handler at the end of the chain.
+
+		- parameter handler: The KirHandler element to append.
+	*/
+	public func use(handler: KirHandler) {
 		handlers.append(handler)
 		middleware = Kir.build(handlers)
 	}
 
-	public func useHandler(handler h: HTTPServerDelegate) {
-		use(Middleware.wrap(h))
+	/** 
+		Use the speficied HTTPServerDelegate as the router of the app.
+		This should be called after all the middleware insertions
+
+		- parameter router: An HTTPServerDelegate instance.
+	*/
+	public func use(router r: HTTPServerDelegate) {
+		use(handler: Middleware.wrap(r))
 	}
+
+	/** 
+		Run the server over the specified port.
+
+		- parameter port: The port to use.
+	*/
 
 	public func run(port: Int) {
 		 let server = HTTP.createServer()
@@ -81,6 +106,15 @@ public final class Kir {
 		 server.listen(port: port, notOnMainQueue: false)
 		 print("[kir] listening on \(port)")
 		 Server.run()
+	}
+
+	/**
+		A classic instance with a logger a static middleware
+		- return: A Kir instance.
+	*/
+	public class func classic() -> Kir {
+
+		return Kir(handlers: Logger(), Static(directory: ""))
 	}
 
 	private class func build(_ handlers: [KirHandler]) -> Middleware {

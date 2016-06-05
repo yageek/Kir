@@ -1,11 +1,16 @@
 import Foundation
 import KituraNet
 
-/// Logger class
+/// Logging middleware.
 public final class Logger: KirHandler {
 
 	public static let Prefix = "[kir]"
 
+	/**
+		Log the message by prepending the class prefix.
+
+		- parameter message: The message to log
+	*/
 	public func log(_ message: String) {
 		print("\(Logger.Prefix) \(message)")
 	}
